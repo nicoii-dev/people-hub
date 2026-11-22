@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { FoundationOverview } from "@/components/shared/foundation-overview";
+import { DashboardView } from "@/features/dashboard/dashboard-view";
 
 export const metadata: Metadata = {
-  title: "Foundation workspace",
+  title: "Dashboard",
 };
 
 export default function HomePage() {
-  return <FoundationOverview />;
+  return <DashboardView />;
 }

@@ -46,14 +46,30 @@ const mockRecruitmentService: RecruitmentService = {
 
   async listCandidates(params = {}) {
     await mockDelay(80);
-    return paginate(readCollection(MOCK_COLLECTIONS.candidates, candidateSeed), { ...params, limit: params.limit ?? 50 }, "Candidates retrieved successfully");
+    const search = params.search?.trim().toLowerCase();
+    const candidates = readCollection(MOCK_COLLECTIONS.candidates, candidateSeed).filter((candidate) => {
+      if (!search) return true;
+      return `${candidate.firstName} ${candidate.lastName} ${candidate.email} ${candidate.location}`
+        .toLowerCase()
+        .includes(search);
+    });
+    return paginate(candidates, { ...params, limit: params.limit ?? 50 }, "Candidates retrieved successfully");
   },
 
   async listApplications(params = {}) {
     await mockDelay(90);
+    const search = params.search?.trim().toLowerCase();
+    const candidates = readCollection(MOCK_COLLECTIONS.candidates, candidateSeed);
+    const jobs = readCollection(MOCK_COLLECTIONS.jobs, jobOpeningSeed);
     const filtered = loadApplications().filter((application) => {
       if (params.jobId && application.jobId !== params.jobId) return false;
       if (params.stage && application.stage !== params.stage) return false;
+      if (search) {
+        const candidate = candidates.find((item) => item.id === application.candidateId);
+        const job = jobs.find((item) => item.id === application.jobId);
+        const haystack = `${candidate?.firstName ?? ""} ${candidate?.lastName ?? ""} ${candidate?.email ?? ""} ${job?.title ?? ""}`.toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
       return true;
     });
     return paginate(filtered, { ...params, limit: params.limit ?? 100 }, "Applications retrieved successfully");

@@ -45,9 +45,17 @@ const mockPayrollService: PayrollService = {
 
   async listRecords(params = {}) {
     await mockDelay(100);
+    const search = params.search?.trim().toLowerCase();
+    const employees = search ? readCollection(MOCK_COLLECTIONS.employees, employeeSeed) : [];
     const filtered = loadRecords().filter((record) => {
       if (params.periodId && record.periodId !== params.periodId) return false;
       if (params.employeeId && record.employeeId !== params.employeeId) return false;
+      if (search) {
+        const employee = employees.find((item) => item.id === record.employeeId);
+        if (!employee) return false;
+        const haystack = `${employee.firstName} ${employee.lastName} ${employee.employeeNumber}`.toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
       return true;
     });
     return paginate(filtered, params, "Payroll records retrieved successfully");

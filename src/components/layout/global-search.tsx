@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Building2, Search, UsersRound } from "lucide-react";
 import { useDepartments } from "@/hooks/use-departments";
 import { useEmployees } from "@/hooks/use-employees";
@@ -53,7 +54,12 @@ export function GlobalSearch() {
               <div>
                 <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">Employees</p>
                 {employees.map((employee) => (
-                  <div key={employee.id} className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent">
+                  <Link
+                    key={employee.id}
+                    href={`/employees/${employee.id}`}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent"
+                  >
                     <EmployeeAvatar
                       firstName={employee.firstName}
                       lastName={employee.lastName}
@@ -67,7 +73,7 @@ export function GlobalSearch() {
                       <p className="truncate text-xs text-muted-foreground">{employee.email}</p>
                     </div>
                     <UsersRound className="size-4 text-muted-foreground" />
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : null}
@@ -76,7 +82,12 @@ export function GlobalSearch() {
               <div>
                 <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">Departments</p>
                 {departments.map((department) => (
-                  <div key={department.id} className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent">
+                  <Link
+                    key={department.id}
+                    href="/departments"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent"
+                  >
                     <span className="flex size-8 items-center justify-center rounded-md bg-muted">
                       <Building2 className="size-4 text-muted-foreground" />
                     </span>
@@ -84,7 +95,7 @@ export function GlobalSearch() {
                       <p className="truncate text-sm font-medium">{department.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{department.code} · {department.location}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : null}

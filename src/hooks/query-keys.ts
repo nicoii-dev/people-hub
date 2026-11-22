@@ -1,5 +1,8 @@
 export const queryKeys = {
   dashboard: ["dashboard"] as const,
+  reports: ["reports"] as const,
+  settingsCompany: ["settings", "company"] as const,
+  settingsUsers: ["settings", "users"] as const,
   employees: ["employees"] as const,
   employee: (id: string) => ["employees", id] as const,
   departments: ["departments"] as const,

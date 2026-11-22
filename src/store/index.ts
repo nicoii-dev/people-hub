@@ -1,21 +1,37 @@
+import { useSyncExternalStore } from "react";
 import { configureStore } from "@reduxjs/toolkit";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { MOCK_VALUES, writeValue } from "@/services/mock/persistence";
 import authReducer from "./slices/auth";
 import uiReducer from "./slices/ui";
 
-export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    ui: uiReducer,
-  },
-});
+const reducer = {
+  auth: authReducer,
+  ui: uiReducer,
+};
+
+export const store = configureStore({ reducer });
+
+// This store is never mutated. React uses it as the snapshot during SSR and
+// hydration, so persisted client state cannot alter the first client render.
+const serverStore = configureStore({ reducer });
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
 export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
-export const useAppSelector = useSelector.withTypes<RootState>();
+
+function subscribeToStore(onStoreChange: () => void) {
+  return store.subscribe(onStoreChange);
+}
+
+export function useAppSelector<T>(selector: (state: RootState) => T): T {
+  return useSyncExternalStore(
+    subscribeToStore,
+    () => selector(store.getState()),
+    () => selector(serverStore.getState()),
+  );
+}
 
 if (typeof window !== "undefined") {
   store.subscribe(() => {

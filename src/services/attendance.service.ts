@@ -1,5 +1,6 @@
 import { env } from "@/config/env";
 import { attendanceSeed } from "@/data/attendance";
+import { employeeSeed } from "@/data/employees";
 import { paginate } from "@/lib/pagination";
 import { assertFound, success } from "@/lib/result";
 import type { Paginated, ServiceResult } from "@/types/api";
@@ -30,11 +31,24 @@ function loadAttendance() {
 const mockAttendanceService: AttendanceService = {
   async list(params = {}) {
     await mockDelay(100);
+    const search = params.search?.trim().toLowerCase();
+    const employees = readCollection(MOCK_COLLECTIONS.employees, employeeSeed);
     const filtered = loadAttendance().filter((record) => {
       if (params.employeeId && record.employeeId !== params.employeeId) return false;
       if (params.status && record.status !== params.status) return false;
       if (params.from && record.date < params.from) return false;
       if (params.to && record.date > params.to) return false;
+
+      if (search || params.departmentId) {
+        const employee = employees.find((item) => item.id === record.employeeId);
+        if (!employee) return false;
+        if (params.departmentId && employee.departmentId !== params.departmentId) return false;
+        if (search) {
+          const haystack = `${employee.firstName} ${employee.lastName} ${employee.employeeNumber}`.toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+      }
+
       return true;
     });
     return paginate(filtered, params, "Attendance records retrieved successfully");

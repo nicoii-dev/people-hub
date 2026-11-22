@@ -30,6 +30,7 @@ function useInvalidateOrganization() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.departments });
     void queryClient.invalidateQueries({ queryKey: queryKeys.positions });
     void queryClient.invalidateQueries({ queryKey: queryKeys.employees });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
   };
 }
 
@@ -73,6 +74,14 @@ export function useUpdatePosition() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: PositionUpdateInput }) =>
       positionService.update(id, input).then((response) => response.data),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeletePosition() {
+  const invalidate = useInvalidateOrganization();
+  return useMutation({
+    mutationFn: (id: string) => positionService.remove(id).then((response) => response.data),
     onSuccess: invalidate,
   });
 }

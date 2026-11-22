@@ -15,6 +15,9 @@ export const API_ENDPOINTS = {
   goals: "/performance/goals",
   notifications: "/notifications",
   dashboard: "/dashboard",
+  reports: "/reports",
+  settingsCompany: "/settings/company",
+  settingsUsers: "/settings/users",
   auth: {
     session: "/auth/session",
     login: "/auth/login",

@@ -2,13 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { performanceService } from "@/services/performance.service";
+import type { ListParams } from "@/types/api";
 import type { ReviewCreateInput } from "@/types/performance";
 import { queryKeys } from "./query-keys";
 
-export function usePerformanceReviews() {
+export function usePerformanceReviews(params: ListParams = {}) {
   return useQuery({
-    queryKey: queryKeys.reviews,
-    queryFn: () => performanceService.listReviews(),
+    queryKey: [...queryKeys.reviews, params],
+    queryFn: () => performanceService.listReviews(params),
   });
 }
 

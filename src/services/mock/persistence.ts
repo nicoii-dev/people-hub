@@ -16,6 +16,7 @@ export const MOCK_COLLECTIONS = {
   reviews: "reviews",
   goals: "goals",
   notifications: "notifications",
+  users: "users",
 } as const;
 
 export type MockCollection =
@@ -24,6 +25,7 @@ export type MockCollection =
 export const MOCK_VALUES = {
   session: "session",
   ui: "ui",
+  companyProfile: "company-profile",
 } as const;
 
 export type MockValue = (typeof MOCK_VALUES)[keyof typeof MOCK_VALUES];
@@ -82,7 +84,9 @@ export function resetMockData() {
   Object.values(MOCK_COLLECTIONS).forEach((collection) => {
     window.localStorage.removeItem(storageKey(collection));
   });
-  window.localStorage.removeItem(storageKey(MOCK_VALUES.session));
+  Object.values(MOCK_VALUES).forEach((key) => {
+    window.localStorage.removeItem(storageKey(key));
+  });
 }
 
 export function mockDelay(ms = 120) {

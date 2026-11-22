@@ -6,6 +6,8 @@ const STATUS_STYLES: Record<string, { label: string; dot: string; variant: Badge
   inactive: { label: "Inactive", dot: "bg-slate-400", variant: "secondary" },
   on_leave: { label: "On Leave", dot: "bg-amber-500", variant: "warning" },
   archived: { label: "Archived", dot: "bg-slate-400", variant: "outline" },
+  invited: { label: "Invited", dot: "bg-blue-500", variant: "default" },
+  suspended: { label: "Suspended", dot: "bg-red-500", variant: "destructive" },
   present: { label: "Present", dot: "bg-emerald-500", variant: "success" },
   late: { label: "Late", dot: "bg-amber-500", variant: "warning" },
   absent: { label: "Absent", dot: "bg-red-500", variant: "destructive" },

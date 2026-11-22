@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import { employeeSeed } from "@/data/employees";
 import { performanceGoalSeed, performanceReviewSeed } from "@/data/performance";
 import { paginate } from "@/lib/pagination";
 import { success } from "@/lib/result";
@@ -26,7 +27,20 @@ export interface PerformanceService {
 const mockPerformanceService: PerformanceService = {
   async listReviews(params = {}) {
     await mockDelay(90);
-    return paginate(readCollection(MOCK_COLLECTIONS.reviews, performanceReviewSeed), { ...params, limit: params.limit ?? 50 }, "Performance reviews retrieved successfully");
+    const search = typeof params.search === "string" ? params.search.trim().toLowerCase() : "";
+    const status = typeof params.status === "string" ? params.status : "";
+    const employees = readCollection(MOCK_COLLECTIONS.employees, employeeSeed);
+    const reviews = readCollection(MOCK_COLLECTIONS.reviews, performanceReviewSeed).filter((review) => {
+      if (status && review.status !== status) return false;
+      if (!search) return true;
+      const employee = employees.find((item) => item.id === review.employeeId);
+      const reviewer = employees.find((item) => item.id === review.reviewerId);
+      const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : "";
+      const reviewerName = reviewer ? `${reviewer.firstName} ${reviewer.lastName}` : "";
+      return [review.id, review.period, review.status, employeeName, reviewerName]
+        .some((value) => value.toLowerCase().includes(search));
+    });
+    return paginate(reviews, { ...params, search: undefined, limit: params.limit ?? 50 }, "Performance reviews retrieved successfully");
   },
 
   async submitReview(input) {

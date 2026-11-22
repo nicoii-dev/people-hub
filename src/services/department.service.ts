@@ -1,6 +1,7 @@
 import { env } from "@/config/env";
 import { departmentSeed } from "@/data/departments";
 import { employeeSeed } from "@/data/employees";
+import { positionSeed } from "@/data/positions";
 import { paginate } from "@/lib/pagination";
 import { assertFound, success } from "@/lib/result";
 import type { ApiSuccess, ListParams, Paginated, ServiceResult } from "@/types/api";
@@ -71,6 +72,10 @@ const mockDepartmentService: DepartmentService = {
     const employees = readCollection(MOCK_COLLECTIONS.employees, employeeSeed);
     if (employees.some((employee) => employee.departmentId === id)) {
       throw new Error("Cannot delete a department with assigned employees");
+    }
+    const positions = readCollection(MOCK_COLLECTIONS.positions, positionSeed);
+    if (positions.some((position) => position.departmentId === id)) {
+      throw new Error("Cannot delete a department with assigned positions");
     }
     const next = loadDepartments().filter((item) => item.id !== id);
     writeCollection(MOCK_COLLECTIONS.departments, next);

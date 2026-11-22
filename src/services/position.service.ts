@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import { employeeSeed } from "@/data/employees";
 import { positionSeed } from "@/data/positions";
 import { paginate } from "@/lib/pagination";
 import { assertFound, success } from "@/lib/result";
@@ -22,6 +23,7 @@ export interface PositionService {
   getById(id: string): ServiceResult<Position>;
   create(input: PositionCreateInput): ServiceResult<Position>;
   update(id: string, input: PositionUpdateInput): ServiceResult<Position>;
+  remove(id: string): ServiceResult<{ id: string }>;
 }
 
 function loadPositions() {
@@ -56,6 +58,16 @@ const mockPositionService: PositionService = {
     writeCollection(MOCK_COLLECTIONS.positions, next);
     return success(updated, "Position updated successfully");
   },
+  async remove(id) {
+    await mockDelay(140);
+    const employees = readCollection(MOCK_COLLECTIONS.employees, employeeSeed);
+    if (employees.some((employee) => employee.positionId === id)) {
+      throw new Error("Cannot delete a position with assigned employees");
+    }
+    const next = loadPositions().filter((item) => item.id !== id);
+    writeCollection(MOCK_COLLECTIONS.positions, next);
+    return success({ id }, "Position deleted successfully");
+  },
 };
 
 const apiPositionService: PositionService = {
@@ -63,6 +75,7 @@ const apiPositionService: PositionService = {
   getById: (id) => apiClient.get<Position>(`${API_ENDPOINTS.positions}/${id}`),
   create: (input) => apiClient.post<Position>(API_ENDPOINTS.positions, input),
   update: (id, input) => apiClient.patch<Position>(`${API_ENDPOINTS.positions}/${id}`, input),
+  remove: (id) => apiClient.delete<{ id: string }>(`${API_ENDPOINTS.positions}/${id}`),
 };
 
 export const positionService: PositionService = env.useMockData
