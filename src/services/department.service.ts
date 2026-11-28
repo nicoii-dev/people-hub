@@ -10,6 +10,13 @@ import type {
   DepartmentCreateInput,
   DepartmentUpdateInput,
 } from "@/types/department";
+import {
+  asRecord,
+  fromDepartmentInput,
+  mapPage,
+  toDepartment,
+  type BackendRecord,
+} from "./api/adapters";
 import { apiClient } from "./api/client";
 import { API_ENDPOINTS } from "./api/endpoints";
 import {
@@ -84,11 +91,29 @@ const mockDepartmentService: DepartmentService = {
 };
 
 const apiDepartmentService: DepartmentService = {
-  list: (params) => apiClient.get<Paginated<Department>>(API_ENDPOINTS.departments, params),
-  getById: (id) => apiClient.get<Department>(`${API_ENDPOINTS.departments}/${id}`),
-  create: (input) => apiClient.post<Department>(API_ENDPOINTS.departments, input),
-  update: (id, input) => apiClient.patch<Department>(`${API_ENDPOINTS.departments}/${id}`, input),
-  remove: (id) => apiClient.delete<{ id: string }>(`${API_ENDPOINTS.departments}/${id}`),
+  list: (params) =>
+    apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.departments(), params)
+      .then((response) => mapPage(response, toDepartment)),
+  getById: (id) =>
+    apiClient
+      .get<BackendRecord>(API_ENDPOINTS.department(id))
+      .then((response) => ({ ...response, data: toDepartment(response.data) })),
+  create: (input) =>
+    apiClient
+      .post<BackendRecord>(API_ENDPOINTS.departments(), fromDepartmentInput(input))
+      .then((response) => ({ ...response, data: toDepartment(response.data) })),
+  update: (id, input) =>
+    apiClient
+      .patch<BackendRecord>(API_ENDPOINTS.department(id), fromDepartmentInput(input))
+      .then((response) => ({ ...response, data: toDepartment(response.data) })),
+  remove: (id) =>
+    apiClient
+      .delete<BackendRecord>(API_ENDPOINTS.department(id))
+      .then((response) => ({
+        ...response,
+        data: { id: String(asRecord(response.data).id ?? id) },
+      })),
 };
 
 export const departmentService: DepartmentService = env.useMockData

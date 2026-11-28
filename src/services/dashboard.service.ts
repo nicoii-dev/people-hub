@@ -1,5 +1,4 @@
 import { format, parseISO, subMonths } from "date-fns";
-import { env } from "@/config/env";
 import { activitySeed, pendingApprovalSeed } from "@/data/dashboard";
 import { attendanceSeed } from "@/data/attendance";
 import { departmentSeed } from "@/data/departments";
@@ -9,8 +8,6 @@ import { MOCK_TODAY, mockDate } from "@/data/_common";
 import { success } from "@/lib/result";
 import type { ServiceResult } from "@/types/api";
 import type { DashboardSummary } from "@/types/dashboard";
-import { apiClient } from "./api/client";
-import { API_ENDPOINTS } from "./api/endpoints";
 import {
   MOCK_COLLECTIONS,
   mockDelay,
@@ -103,10 +100,5 @@ const mockDashboardService: DashboardService = {
   },
 };
 
-const apiDashboardService: DashboardService = {
-  getSummary: () => apiClient.get<DashboardSummary>(API_ENDPOINTS.dashboard),
-};
-
-export const dashboardService: DashboardService = env.useMockData
-  ? mockDashboardService
-  : apiDashboardService;
+// The API has no dashboard controller yet, so this screen stays local.
+export const dashboardService: DashboardService = mockDashboardService;

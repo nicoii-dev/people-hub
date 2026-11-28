@@ -8,7 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { navigation, type NavItem } from "@/config/navigation";
+import {
+  employeeNavigation,
+  navigation,
+  superAdminNavigation,
+  type NavItem,
+} from "@/config/navigation";
 import { ROLE_LABELS, hasPermission } from "@/config/permissions";
 import { useAuth } from "@/features/auth/hooks";
 import { cn } from "@/lib/utils";
@@ -80,11 +85,21 @@ export function Sidebar({ inSheet = false, onNavigate }: SidebarProps) {
   const dispatch = useAppDispatch();
   const collapsedFromStore = useAppSelector((state) => state.ui.sidebarCollapsed);
   const collapsed = inSheet ? false : collapsedFromStore;
-  const { user } = useAuth();
+  const { user, hydrated } = useAuth();
   const [openGroups, setOpenGroups] = React.useState<string[]>(["/employees"]);
 
-  const allowed = (permission: NavItem["permission"]) =>
-    user ? hasPermission(user.role, permission) : false;
+  // Never render role-based links until the persisted session is restored.
+  // Employees and super admins get dedicated navigation instead of the HR menu.
+  const visibleNavigation =
+    user?.role === "employee"
+      ? employeeNavigation
+      : user?.role === "super_admin"
+        ? superAdminNavigation
+        : navigation;
+  const allowed = (item: NavItem) => {
+    if (!hydrated || !user) return false;
+    return hasPermission(user.role, item.permission);
+  };
 
   function toggleGroup(href: string) {
     setOpenGroups((current) =>
@@ -114,15 +129,16 @@ export function Sidebar({ inSheet = false, onNavigate }: SidebarProps) {
       <Separator />
 
       <nav className="scrollbar-thin flex-1 space-y-1 overflow-y-auto p-3" aria-label="Main navigation">
-        {navigation
-          .filter((item) => allowed(item.permission))
+        {visibleNavigation
+          .filter(allowed)
           .map((item) => {
+            const children = (item.children ?? []).filter(allowed);
             const active = Boolean(
-              pathname === item.href || item.children?.some((child) => child.href === pathname),
+              pathname === item.href || children.some((child) => child.href === pathname),
             );
             const isOpen = openGroups.includes(item.href);
 
-            if (item.children?.length) {
+            if (children.length) {
               return (
                 <div key={item.href} className="space-y-1">
                   {collapsed ? (
@@ -144,7 +160,7 @@ export function Sidebar({ inSheet = false, onNavigate }: SidebarProps) {
                   )}
                   {!collapsed && isOpen ? (
                     <div className="ml-4 space-y-1 border-l pl-3">
-                      {item.children.map((child) => (
+                      {children.map((child) => (
                         <NavRow
                           key={child.href}
                           item={child}

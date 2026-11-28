@@ -16,7 +16,20 @@ import type {
   JobOpening,
   RecruitmentStage,
 } from "@/types/recruitment";
-import { apiClient } from "./api/client";
+import {
+  applicationActionForStage,
+  asRecord,
+  fromHireApplication,
+  fromScheduleInterview,
+  mapPage,
+  toApplication,
+  toApplicationQuery,
+  toCandidate,
+  toInterview,
+  toJobOpening,
+  type BackendRecord,
+} from "./api/adapters";
+import { ApiRequestError, apiClient } from "./api/client";
 import { API_ENDPOINTS } from "./api/endpoints";
 import {
   MOCK_COLLECTIONS,
@@ -110,13 +123,60 @@ const mockRecruitmentService: RecruitmentService = {
 };
 
 const apiRecruitmentService: RecruitmentService = {
-  listJobs: () => apiClient.get<JobOpening[]>(API_ENDPOINTS.jobs),
-  listCandidates: (params) => apiClient.get<Paginated<Candidate>>(API_ENDPOINTS.candidates, params),
-  listApplications: (params) => apiClient.get<Paginated<Application>>(API_ENDPOINTS.applications, params),
-  moveCandidate: (id, stage) => apiClient.patch<Application>(`${API_ENDPOINTS.applications}/${id}/stage`, { stage }),
-  listInterviews: () => apiClient.get<Interview[]>(API_ENDPOINTS.interviews),
+  listJobs: () =>
+    apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.jobPostings(), { limit: 100 })
+      .then((response) => ({
+        ...response,
+        data: response.data.items.map(toJobOpening),
+      })),
+  listCandidates: (params) =>
+    apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.candidates(), params)
+      .then((response) => mapPage(response, toCandidate)),
+  listApplications: (params) =>
+    apiClient
+      .get<Paginated<BackendRecord>>(
+        API_ENDPOINTS.applications(),
+        toApplicationQuery(params),
+      )
+      .then((response) => mapPage(response, toApplication)),
+  moveCandidate: async (id, stage) => {
+    const action = applicationActionForStage(stage);
+    if (!action) {
+      throw new ApiRequestError(
+        `The API has no transition for recruitment stage "${stage}".`,
+        400,
+        null,
+      );
+    }
+    const body = action === "hire" ? fromHireApplication() : undefined;
+    return apiClient
+      .post<BackendRecord>(API_ENDPOINTS.applicationAction(id, action), body)
+      .then((response) => ({
+        ...response,
+        data: toApplication(
+          asRecord(response.data).application ?? response.data,
+        ),
+      }));
+  },
+  listInterviews: () =>
+    apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.interviews(), { limit: 100 })
+      .then((response) => ({
+        ...response,
+        data: response.data.items.map(toInterview),
+      })),
   scheduleInterview: (applicationId, scheduledAt, interviewerId) =>
-    apiClient.post<Interview>(API_ENDPOINTS.interviews, { applicationId, scheduledAt, interviewerId }),
+    apiClient
+      .post<BackendRecord>(
+        API_ENDPOINTS.interviews(),
+        fromScheduleInterview(applicationId, scheduledAt, interviewerId),
+      )
+      .then((response) => ({
+        ...response,
+        data: toInterview(response.data),
+      })),
 };
 
 export const recruitmentService: RecruitmentService = env.useMockData

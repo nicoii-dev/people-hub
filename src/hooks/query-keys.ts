@@ -1,13 +1,37 @@
+import type { ListParams } from "@/types/api";
+
 export const queryKeys = {
   dashboard: ["dashboard"] as const,
   reports: ["reports"] as const,
+  projectReport: ["reports", "project-summary"] as const,
+  projectReportQuery: (params?: object) =>
+    ["reports", "project-summary", params ?? {}] as const,
   settingsCompany: ["settings", "company"] as const,
   settingsUsers: ["settings", "users"] as const,
   employees: ["employees"] as const,
+  birthdays: (month: number) => ["birthdays", month] as const,
   employee: (id: string) => ["employees", id] as const,
+  employeeAnnouncements: ["employee-portal", "announcements"] as const,
+  employeeOnboarding: (employeeId: string) =>
+    ["employee-portal", "onboarding", employeeId] as const,
+  employeeCompanyInfo: ["employee-portal", "company-information"] as const,
   departments: ["departments"] as const,
   positions: ["positions"] as const,
+  clients: ["clients"] as const,
+  clientList: (params?: ListParams) => ["clients", "list", params ?? {}] as const,
+  client: (id: string) => ["clients", id] as const,
+  projects: ["projects"] as const,
+  projectList: (params?: ListParams) => ["projects", "list", params ?? {}] as const,
+  project: (id: string) => ["projects", id] as const,
+  projectTags: (projectId: string) => ["projects", projectId, "tags"] as const,
+  projectAssignments: (projectId: string) =>
+    ["projects", projectId, "assignments"] as const,
+  companyAssignments: ["assignments"] as const,
+  timeEntries: ["time-entries"] as const,
+  timeEntryList: (params?: ListParams) => ["time-entries", "list", params ?? {}] as const,
+  timeEntry: (id: string) => ["time-entries", id] as const,
   attendance: ["attendance"] as const,
+  timeClock: (employeeId: string) => ["time-clock", employeeId] as const,
   leaves: ["leaves"] as const,
   leaveBalances: ["leave-balances"] as const,
   payrollPeriods: ["payroll-periods"] as const,
@@ -19,4 +43,10 @@ export const queryKeys = {
   reviews: ["reviews"] as const,
   goals: ["goals"] as const,
   notifications: ["notifications"] as const,
+  platformCompanies: ["platform", "companies"] as const,
+  platformPlans: ["platform", "plans"] as const,
+  platformPayments: ["platform", "payments"] as const,
+  platformRevenue: ["platform", "revenue"] as const,
+  platformUsage: ["platform", "usage"] as const,
+  platformSettings: ["platform", "settings"] as const,
 };

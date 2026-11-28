@@ -5,7 +5,6 @@ import {
   RATING_SCORES,
   RECRUITMENT_STAGE_OPTIONS,
 } from "@/config/constants";
-import { env } from "@/config/env";
 import { attendanceSeed } from "@/data/attendance";
 import { departmentSeed } from "@/data/departments";
 import { employeeSeed } from "@/data/employees";
@@ -16,8 +15,6 @@ import { applicationSeed, jobOpeningSeed } from "@/data/recruitment";
 import { success } from "@/lib/result";
 import type { ServiceResult } from "@/types/api";
 import type { ReportsData } from "@/types/report";
-import { apiClient } from "./api/client";
-import { API_ENDPOINTS } from "./api/endpoints";
 import {
   MOCK_COLLECTIONS,
   mockDelay,
@@ -136,11 +133,5 @@ const mockReportsService: ReportsService = {
   },
 };
 
-const apiReportsService: ReportsService = {
-  getReports: (departmentId) =>
-    apiClient.get<ReportsData>(API_ENDPOINTS.reports, departmentId ? { departmentId } : undefined),
-};
-
-export const reportsService: ReportsService = env.useMockData
-  ? mockReportsService
-  : apiReportsService;
+// The API has no reports controller yet, so reports stay local.
+export const reportsService: ReportsService = mockReportsService;

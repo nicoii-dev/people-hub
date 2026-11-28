@@ -9,7 +9,7 @@ import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { MOCK_TODAY } from "@/config/constants";
-import { usePermission } from "@/features/auth/hooks";
+import { useAuth, usePermission } from "@/features/auth/hooks";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useDepartments } from "@/hooks/use-departments";
 import { useEmployees } from "@/hooks/use-employees";
@@ -19,6 +19,9 @@ import type { AttendanceQueryParams, AttendanceRecord, AttendanceStatus } from "
 import { AttendanceAdjustDialog } from "./components/attendance-adjust-dialog";
 import { AttendanceFilters } from "./components/attendance-filters";
 import { AttendanceSummaryCards } from "./components/attendance-summary-cards";
+import { EmployeeBirthdays } from "./components/employee-birthdays";
+import { EmployeeLeaveSummary } from "./components/employee-leave-summary";
+import { EmployeeTimeClock } from "./components/employee-time-clock";
 import { AttendanceTable } from "./components/attendance-table";
 
 export function AttendanceView() {
@@ -36,6 +39,8 @@ export function AttendanceView() {
   const page = pageState.key === filterKey ? pageState.page : 1;
   const handlePageChange = (nextPage: number) => setPageState({ key: filterKey, page: nextPage });
 
+  const { user } = useAuth();
+  const isEmployee = user?.role === "employee";
   const canManage = usePermission("attendance:manage");
   const departmentsQuery = useDepartments();
   const employeesQuery = useEmployees({ limit: 100 });
@@ -78,85 +83,100 @@ export function AttendanceView() {
     <div className="space-y-6">
       <PageHeader
         title="Attendance"
-        description={`Daily attendance and time records for ${formatDate(MOCK_TODAY)}.`}
+        description={
+          isEmployee
+            ? "Clock in and out, track your leave, and see upcoming birthdays."
+            : `Daily attendance and time records for ${formatDate(MOCK_TODAY)}.`
+        }
       />
 
-      <AttendanceSummaryCards
-        total={todayRecords.length}
-        present={todayRecords.filter((record) => record.status === "present").length}
-        late={todayRecords.filter((record) => record.status === "late").length}
-        absent={todayRecords.filter((record) => record.status === "absent").length}
-        onLeave={todayRecords.filter((record) => record.status === "on_leave").length}
-        overtime={todayRecords.filter((record) => record.status === "overtime").length}
-        loading={todayQuery.isPending}
-      />
+      <EmployeeTimeClock />
 
-      <Card className="overflow-hidden">
-        <AttendanceFilters
-          search={search}
-          onSearchChange={setSearch}
-          departmentId={departmentId}
-          onDepartmentChange={setDepartmentId}
-          status={status}
-          onStatusChange={setStatus}
-          from={from}
-          onFromChange={setFrom}
-          to={to}
-          onToChange={setTo}
-          departments={departments}
-        />
+      {isEmployee ? (
+        <>
+          <EmployeeLeaveSummary />
+          <EmployeeBirthdays />
+        </>
+      ) : (
+        <>
+          <AttendanceSummaryCards
+            total={todayRecords.length}
+            present={todayRecords.filter((record) => record.status === "present").length}
+            late={todayRecords.filter((record) => record.status === "late").length}
+            absent={todayRecords.filter((record) => record.status === "absent").length}
+            onLeave={todayRecords.filter((record) => record.status === "on_leave").length}
+            overtime={todayRecords.filter((record) => record.status === "overtime").length}
+            loading={todayQuery.isPending}
+          />
 
-        {attendanceQuery.isError ? (
-          <div className="p-4">
-            <ErrorState
-              title="Attendance unavailable"
-              description="Attendance records could not be loaded."
-              error={attendanceQuery.error}
-              onRetry={() => void attendanceQuery.refetch()}
+          <Card className="overflow-hidden">
+            <AttendanceFilters
+              search={search}
+              onSearchChange={setSearch}
+              departmentId={departmentId}
+              onDepartmentChange={setDepartmentId}
+              status={status}
+              onStatusChange={setStatus}
+              from={from}
+              onFromChange={setFrom}
+              to={to}
+              onToChange={setTo}
+              departments={departments}
             />
-          </div>
-        ) : attendanceQuery.isPending ? (
-          <div className="p-4">
-            <LoadingSkeleton variant="table" count={8} />
-          </div>
-        ) : records.length === 0 ? (
-          <div className="p-4">
-            <EmptyState
-              icon={<SearchX className="size-5" />}
-              title="No attendance records"
-              description={
-                hasFilters
-                  ? "Try a different date range or clear the active filters."
-                  : "Adjust the filters to find attendance records."
-              }
-              action={
-                hasFilters ? (
-                  <button type="button" onClick={clearFilters} className="text-sm font-medium text-primary hover:underline">
-                    Clear filters
-                  </button>
-                ) : undefined
-              }
-            />
-          </div>
-        ) : (
-          <>
-            <AttendanceTable
-              records={records}
-              employees={employees}
-              canManage={canManage}
-              onAdjust={openAdjust}
-            />
-            {meta ? <Pagination meta={meta} onPageChange={handlePageChange} /> : null}
-          </>
-        )}
-      </Card>
 
-      <AttendanceAdjustDialog
-        open={adjustOpen}
-        onOpenChange={setAdjustOpen}
-        record={selectedRecord}
-        employees={employees}
-      />
+            {attendanceQuery.isError ? (
+              <div className="p-4">
+                <ErrorState
+                  title="Attendance unavailable"
+                  description="Attendance records could not be loaded."
+                  error={attendanceQuery.error}
+                  onRetry={() => void attendanceQuery.refetch()}
+                />
+              </div>
+            ) : attendanceQuery.isPending ? (
+              <div className="p-4">
+                <LoadingSkeleton variant="table" count={8} />
+              </div>
+            ) : records.length === 0 ? (
+              <div className="p-4">
+                <EmptyState
+                  icon={<SearchX className="size-5" />}
+                  title="No attendance records"
+                  description={
+                    hasFilters
+                      ? "Try a different date range or clear the active filters."
+                      : "Adjust the filters to find attendance records."
+                  }
+                  action={
+                    hasFilters ? (
+                      <button type="button" onClick={clearFilters} className="text-sm font-medium text-primary hover:underline">
+                        Clear filters
+                      </button>
+                    ) : undefined
+                  }
+                />
+              </div>
+            ) : (
+              <>
+                <AttendanceTable
+                  records={records}
+                  employees={employees}
+                  canManage={canManage}
+                  onAdjust={openAdjust}
+                />
+                {meta ? <Pagination meta={meta} onPageChange={handlePageChange} /> : null}
+              </>
+            )}
+          </Card>
+
+          <AttendanceAdjustDialog
+            open={adjustOpen}
+            onOpenChange={setAdjustOpen}
+            record={selectedRecord}
+            employees={employees}
+          />
+        </>
+      )}
     </div>
   );
 }

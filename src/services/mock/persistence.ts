@@ -4,6 +4,11 @@ export const MOCK_COLLECTIONS = {
   employees: "employees",
   departments: "departments",
   positions: "positions",
+  clients: "clients",
+  projects: "projects",
+  projectTags: "project-tags",
+  projectAssignments: "project-assignments",
+  timeEntries: "time-entries",
   attendance: "attendance",
   leaves: "leaves",
   leaveBalances: "leave-balances",
@@ -17,6 +22,10 @@ export const MOCK_COLLECTIONS = {
   goals: "goals",
   notifications: "notifications",
   users: "users",
+  platformCompanies: "platform-companies",
+  subscriptionPlans: "subscription-plans",
+  platformPayments: "platform-payments",
+  trialChecklist: "trial-checklist",
 } as const;
 
 export type MockCollection =
@@ -26,6 +35,9 @@ export const MOCK_VALUES = {
   session: "session",
   ui: "ui",
   companyProfile: "company-profile",
+  platformSettings: "platform-settings",
+  trial: "trial",
+  trialChecklist: "trial-checklist",
 } as const;
 
 export type MockValue = (typeof MOCK_VALUES)[keyof typeof MOCK_VALUES];

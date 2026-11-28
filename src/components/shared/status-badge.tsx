@@ -21,6 +21,9 @@ const STATUS_STYLES: Record<string, { label: string; dot: string; variant: Badge
   preview: { label: "Preview", dot: "bg-blue-500", variant: "default" },
   processed: { label: "Processed", dot: "bg-emerald-500", variant: "success" },
   paid: { label: "Paid", dot: "bg-emerald-500", variant: "success" },
+  failed: { label: "Failed", dot: "bg-red-500", variant: "destructive" },
+  refunded: { label: "Refunded", dot: "bg-slate-400", variant: "secondary" },
+  trial: { label: "Trial", dot: "bg-blue-500", variant: "default" },
   open: { label: "Open", dot: "bg-emerald-500", variant: "success" },
   on_hold: { label: "On Hold", dot: "bg-amber-500", variant: "warning" },
   closed: { label: "Closed", dot: "bg-slate-400", variant: "secondary" },
@@ -35,6 +38,14 @@ const STATUS_STYLES: Record<string, { label: string; dot: string; variant: Badge
   completed: { label: "Completed", dot: "bg-emerald-500", variant: "success" },
   at_risk: { label: "At Risk", dot: "bg-amber-500", variant: "warning" },
   on_track: { label: "On Track", dot: "bg-blue-500", variant: "default" },
+  planning: { label: "Planning", dot: "bg-indigo-500", variant: "default" },
+  low: { label: "Low", dot: "bg-slate-400", variant: "secondary" },
+  medium: { label: "Medium", dot: "bg-blue-500", variant: "default" },
+  high: { label: "High", dot: "bg-amber-500", variant: "warning" },
+  urgent: { label: "Urgent", dot: "bg-red-500", variant: "destructive" },
+  lead: { label: "Lead", dot: "bg-violet-500", variant: "default" },
+  member: { label: "Member", dot: "bg-blue-500", variant: "default" },
+  reviewer: { label: "Reviewer", dot: "bg-amber-500", variant: "warning" },
 };
 
 interface StatusBadgeProps {

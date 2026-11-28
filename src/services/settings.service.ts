@@ -1,4 +1,3 @@
-import { env } from "@/config/env";
 import { companyProfileSeed, systemUserSeed } from "@/data/settings";
 import { success } from "@/lib/result";
 import type { ServiceResult } from "@/types/api";
@@ -7,8 +6,6 @@ import type {
   SystemUser,
   SystemUserUpdateInput,
 } from "@/types/settings";
-import { apiClient } from "./api/client";
-import { API_ENDPOINTS } from "./api/endpoints";
 import {
   MOCK_COLLECTIONS,
   MOCK_VALUES,
@@ -62,15 +59,6 @@ const mockSettingsService: SettingsService = {
   },
 };
 
-const apiSettingsService: SettingsService = {
-  getCompanyProfile: () => apiClient.get<CompanyProfile>(API_ENDPOINTS.settingsCompany),
-  updateCompanyProfile: (input) =>
-    apiClient.patch<CompanyProfile>(API_ENDPOINTS.settingsCompany, input),
-  listUsers: () => apiClient.get<SystemUser[]>(API_ENDPOINTS.settingsUsers),
-  updateUser: (id, input) =>
-    apiClient.patch<SystemUser>(`${API_ENDPOINTS.settingsUsers}/${id}`, input),
-};
-
-export const settingsService: SettingsService = env.useMockData
-  ? mockSettingsService
-  : apiSettingsService;
+// Settings UI still uses local data; the API exposes company settings and
+// members under different shapes, so it will be wired separately.
+export const settingsService: SettingsService = mockSettingsService;

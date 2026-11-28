@@ -1,10 +1,7 @@
-import { env } from "@/config/env";
 import { notificationSeed } from "@/data/notifications";
 import { success } from "@/lib/result";
 import type { ServiceResult } from "@/types/api";
 import type { AppNotification } from "@/types/notification";
-import { apiClient } from "./api/client";
-import { API_ENDPOINTS } from "./api/endpoints";
 import {
   MOCK_COLLECTIONS,
   mockDelay,
@@ -48,12 +45,5 @@ const mockNotificationService: NotificationService = {
   },
 };
 
-const apiNotificationService: NotificationService = {
-  list: () => apiClient.get<AppNotification[]>(API_ENDPOINTS.notifications),
-  markRead: (id) => apiClient.patch<AppNotification>(`${API_ENDPOINTS.notifications}/${id}/read`, {}),
-  markAllRead: () => apiClient.patch<AppNotification[]>(`${API_ENDPOINTS.notifications}/read-all`, {}),
-};
-
-export const notificationService: NotificationService = env.useMockData
-  ? mockNotificationService
-  : apiNotificationService;
+// The API has no notifications controller yet, so notifications stay local.
+export const notificationService: NotificationService = mockNotificationService;

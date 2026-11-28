@@ -12,7 +12,17 @@ import type {
   PayrollQueryParams,
   PayrollRecord,
 } from "@/types/payroll";
-import { apiClient } from "./api/client";
+import {
+  asRecord,
+  fromPayrollGeneration,
+  mapPage,
+  payrollActionForStatus,
+  toPayrollPeriod,
+  toPayrollQuery,
+  toPayrollRecord,
+  type BackendRecord,
+} from "./api/adapters";
+import { ApiRequestError, apiClient } from "./api/client";
 import { API_ENDPOINTS } from "./api/endpoints";
 import {
   MOCK_COLLECTIONS,
@@ -123,12 +133,56 @@ const mockPayrollService: PayrollService = {
 };
 
 const apiPayrollService: PayrollService = {
-  listPeriods: () => apiClient.get<PayrollPeriod[]>(API_ENDPOINTS.payrollPeriods),
-  listRecords: (params) => apiClient.get<Paginated<PayrollRecord>>(API_ENDPOINTS.payrollRecords, params),
-  getPayslip: (id) => apiClient.get<PayrollRecord>(`${API_ENDPOINTS.payrollRecords}/${id}`),
-  generatePreview: (input) => apiClient.post<PayrollRecord[]>(`${API_ENDPOINTS.payrollPeriods}/${input.periodId}/preview`, input),
-  updatePeriodStatus: (id, status) =>
-    apiClient.patch<PayrollPeriod>(`${API_ENDPOINTS.payrollPeriods}/${id}/status`, { status }),
+  listPeriods: () =>
+    apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.payrollPeriods())
+      .then((response) => ({
+        ...response,
+        data: response.data.items.map(toPayrollPeriod),
+      })),
+  listRecords: (params) =>
+    apiClient
+      .get<Paginated<BackendRecord>>(
+        API_ENDPOINTS.payrollRecords(),
+        toPayrollQuery(params),
+      )
+      .then((response) => mapPage(response, toPayrollRecord)),
+  getPayslip: (id) =>
+    apiClient
+      .get<BackendRecord>(API_ENDPOINTS.payrollRecord(id))
+      .then((response) => ({ ...response, data: toPayrollRecord(response.data) })),
+  generatePreview: async (input) => {
+    const generated = await apiClient.post<BackendRecord>(
+      API_ENDPOINTS.payrollPeriodAction(input.periodId, "generate"),
+      fromPayrollGeneration(input),
+    );
+    const records = await apiClient.get<Paginated<BackendRecord>>(
+      API_ENDPOINTS.payrollRecords(),
+      { periodId: input.periodId },
+    );
+    return {
+      ...generated,
+      data: records.data.items.map(toPayrollRecord),
+    };
+  },
+  updatePeriodStatus: async (id, status) => {
+    const action = payrollActionForStatus(status);
+    if (!action) {
+      throw new ApiRequestError(
+        `Payroll period status "${status}" has no matching API action.`,
+        400,
+        null,
+      );
+    }
+    const result = await apiClient.post<BackendRecord>(
+      API_ENDPOINTS.payrollPeriodAction(id, action),
+    );
+    const payload = asRecord(result.data);
+    return {
+      ...result,
+      data: toPayrollPeriod(payload.period ?? result.data),
+    };
+  },
 };
 
 export const payrollService: PayrollService = env.useMockData ? mockPayrollService : apiPayrollService;

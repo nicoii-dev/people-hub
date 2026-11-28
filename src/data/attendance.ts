@@ -69,6 +69,10 @@ export const attendanceSeed: AttendanceRecord[] = employeeSeed.flatMap((employee
                   ? "No time-in recorded"
                   : "Regular shift completed",
       source: employeeIndex % 17 === 0 && daysAgo < 5 ? "manual" : "biometric",
+      timeInLocation: timeIn ? employee.workLocation : null,
+      timeOutLocation: timeOut ? employee.workLocation : null,
+      hasTimeInPhoto: false,
+      hasTimeOutPhoto: false,
     });
   }
 

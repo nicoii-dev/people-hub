@@ -9,6 +9,14 @@ import type {
   PerformanceReview,
   ReviewCreateInput,
 } from "@/types/performance";
+import {
+  fromReviewCreate,
+  mapPage,
+  toPerformanceGoal,
+  toPerformanceReview,
+  toReviewQuery,
+  type BackendRecord,
+} from "./api/adapters";
 import { apiClient } from "./api/client";
 import { API_ENDPOINTS } from "./api/endpoints";
 import {
@@ -65,10 +73,40 @@ const mockPerformanceService: PerformanceService = {
 };
 
 const apiPerformanceService: PerformanceService = {
-  listReviews: (params) => apiClient.get<Paginated<PerformanceReview>>(API_ENDPOINTS.reviews, params),
-  submitReview: (input) => apiClient.post<PerformanceReview>(API_ENDPOINTS.reviews, input),
+  listReviews: (params) =>
+    apiClient
+      .get<Paginated<BackendRecord>>(
+        API_ENDPOINTS.reviews(),
+        toReviewQuery(params),
+      )
+      .then((response) => mapPage(response, toPerformanceReview)),
+  submitReview: async (input) => {
+    const { body, ratings } = fromReviewCreate(input);
+    const response = await apiClient.post<BackendRecord>(
+      API_ENDPOINTS.reviews(),
+      body,
+    );
+    const reviewId = String(response.data.id ?? "");
+    await Promise.all(
+      ratings.map((rating) =>
+        apiClient.post<BackendRecord>(
+          API_ENDPOINTS.reviewRatings(reviewId),
+          rating,
+        ),
+      ),
+    );
+    return { ...response, data: toPerformanceReview(response.data) };
+  },
   listGoals: (employeeId) =>
-    apiClient.get<PerformanceGoal[]>(API_ENDPOINTS.goals, employeeId ? { employeeId } : undefined),
+    apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.goals(), {
+        limit: 100,
+        ...(employeeId ? { employeeId } : {}),
+      })
+      .then((response) => ({
+        ...response,
+        data: response.data.items.map(toPerformanceGoal),
+      })),
 };
 
 export const performanceService: PerformanceService = env.useMockData

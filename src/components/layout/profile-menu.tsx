@@ -1,6 +1,7 @@
 "use client";
 
 import { LogOut, Settings, ShieldCheck, UserCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { EmployeeAvatar } from "@/components/shared/employee-avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,7 @@ export function ProfileMenu() {
   const { user } = useAuth();
   const { switchRole } = useRoleSwitcher();
   const { logout } = useLogout();
+  const router = useRouter();
 
   if (!user) return null;
 
@@ -71,7 +73,12 @@ export function ProfileMenu() {
           ))}
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem
+          disabled={user.role !== "employee"}
+          onSelect={() => {
+            router.push("/employee/profile");
+          }}
+        >
           <UserCircle className="size-4" />
           My profile
         </DropdownMenuItem>

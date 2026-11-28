@@ -21,6 +21,7 @@ import { LeaveByTypeChart } from "./charts/leave-by-type-chart";
 import { RatingDistributionChart } from "./charts/rating-distribution-chart";
 import { RecruitmentFunnelChart } from "./charts/recruitment-funnel-chart";
 import { DepartmentBreakdownTable } from "./department-breakdown-table";
+import { ProjectReportSection } from "./project-report-section";
 import { ReportSummaryCards } from "./report-summary-cards";
 import { ReportsFilters } from "./reports-filters";
 
@@ -198,6 +199,8 @@ export function ReportsView() {
           )}
         </ChartCard>
       </div>
+
+      <ProjectReportSection />
     </div>
   );
 }

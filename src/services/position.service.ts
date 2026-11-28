@@ -9,6 +9,13 @@ import type {
   PositionCreateInput,
   PositionUpdateInput,
 } from "@/types/position";
+import {
+  asRecord,
+  fromPositionInput,
+  mapPage,
+  toPosition,
+  type BackendRecord,
+} from "./api/adapters";
 import { apiClient } from "./api/client";
 import { API_ENDPOINTS } from "./api/endpoints";
 import {
@@ -71,11 +78,29 @@ const mockPositionService: PositionService = {
 };
 
 const apiPositionService: PositionService = {
-  list: (params) => apiClient.get<Paginated<Position>>(API_ENDPOINTS.positions, params),
-  getById: (id) => apiClient.get<Position>(`${API_ENDPOINTS.positions}/${id}`),
-  create: (input) => apiClient.post<Position>(API_ENDPOINTS.positions, input),
-  update: (id, input) => apiClient.patch<Position>(`${API_ENDPOINTS.positions}/${id}`, input),
-  remove: (id) => apiClient.delete<{ id: string }>(`${API_ENDPOINTS.positions}/${id}`),
+  list: (params) =>
+    apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.positions(), params)
+      .then((response) => mapPage(response, toPosition)),
+  getById: (id) =>
+    apiClient
+      .get<BackendRecord>(API_ENDPOINTS.position(id))
+      .then((response) => ({ ...response, data: toPosition(response.data) })),
+  create: (input) =>
+    apiClient
+      .post<BackendRecord>(API_ENDPOINTS.positions(), fromPositionInput(input))
+      .then((response) => ({ ...response, data: toPosition(response.data) })),
+  update: (id, input) =>
+    apiClient
+      .patch<BackendRecord>(API_ENDPOINTS.position(id), fromPositionInput(input))
+      .then((response) => ({ ...response, data: toPosition(response.data) })),
+  remove: (id) =>
+    apiClient
+      .delete<BackendRecord>(API_ENDPOINTS.position(id))
+      .then((response) => ({
+        ...response,
+        data: { id: String(asRecord(response.data).id ?? id) },
+      })),
 };
 
 export const positionService: PositionService = env.useMockData

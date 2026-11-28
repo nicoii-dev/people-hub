@@ -10,6 +10,15 @@ import type {
   EmployeeUpdateInput,
 } from "@/types/employee";
 import type { ApiSuccess, Paginated, ServiceResult } from "@/types/api";
+import {
+  EMPLOYEE_STATUS_TO_API,
+  fromEmployeeCreate,
+  fromEmployeeUpdate,
+  mapPage,
+  toEmployee,
+  toEmployeeQuery,
+  type BackendRecord,
+} from "./api/adapters";
 import { apiClient } from "./api/client";
 import { API_ENDPOINTS } from "./api/endpoints";
 import {
@@ -103,13 +112,38 @@ const mockEmployeeService: EmployeeService = {
 };
 
 const apiEmployeeService: EmployeeService = {
-  list: (params) => apiClient.get<Paginated<Employee>>(API_ENDPOINTS.employees, params),
-  getById: (id) => apiClient.get<Employee>(`${API_ENDPOINTS.employees}/${id}`),
-  create: (input) => apiClient.post<Employee>(API_ENDPOINTS.employees, input),
-  update: (id, input) => apiClient.patch<Employee>(`${API_ENDPOINTS.employees}/${id}`, input),
-  archive: (id) => apiClient.patch<Employee>(`${API_ENDPOINTS.employees}/${id}/archive`, {}),
+  list: (params) =>
+    apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.employees(), toEmployeeQuery(params))
+      .then((response) => mapPage(response, toEmployee)),
+  getById: (id) =>
+    apiClient
+      .get<BackendRecord>(API_ENDPOINTS.employee(id))
+      .then((response) => ({ ...response, data: toEmployee(response.data) })),
+  create: (input) =>
+    apiClient
+      .post<BackendRecord>(API_ENDPOINTS.employees(), fromEmployeeCreate(input))
+      .then((response) => ({ ...response, data: toEmployee(response.data) })),
+  update: (id, input) =>
+    apiClient
+      .patch<BackendRecord>(API_ENDPOINTS.employee(id), fromEmployeeUpdate(input))
+      .then((response) => ({ ...response, data: toEmployee(response.data) })),
+  // The API soft-deletes via DELETE and returns `{ deleted }`, not the employee.
+  archive: async (id) => {
+    const before = await apiClient.get<BackendRecord>(API_ENDPOINTS.employee(id));
+    await apiClient.delete<BackendRecord>(API_ENDPOINTS.employee(id));
+    return {
+      ...before,
+      message: "Employee archived successfully",
+      data: { ...toEmployee(before.data), employmentStatus: "archived" as const },
+    };
+  },
   setStatus: (id, status) =>
-    apiClient.patch<Employee>(`${API_ENDPOINTS.employees}/${id}/status`, { status }),
+    apiClient
+      .patch<BackendRecord>(API_ENDPOINTS.employee(id), {
+        employmentStatus: EMPLOYEE_STATUS_TO_API[status],
+      })
+      .then((response) => ({ ...response, data: toEmployee(response.data) })),
 };
 
 export const employeeService: EmployeeService = env.useMockData

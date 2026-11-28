@@ -21,7 +21,14 @@ export interface AttendanceRecord {
   overtimeMinutes: number;
   workLocation: string;
   remarks: string;
-  source: "biometric" | "manual";
+  source: "biometric" | "manual" | "time_clock";
+  timeInLocation: string | null;
+  timeOutLocation: string | null;
+  hasTimeInPhoto: boolean;
+  hasTimeOutPhoto: boolean;
+  /** Data URLs from self-service time-clock responses, when available. */
+  timeInPhoto?: string | null;
+  timeOutPhoto?: string | null;
 }
 
 export interface AttendanceQueryParams extends ListParams {
@@ -36,3 +43,10 @@ export type AttendanceAdjustmentInput = Pick<
   AttendanceRecord,
   "timeIn" | "timeOut" | "breakMinutes" | "status" | "remarks"
 >;
+
+export interface TimeClockInput {
+  /** Human-readable current address, never raw geolocation coordinates. */
+  location: string;
+  /** JPEG/PNG/WebP data URL captured from the employee's camera. */
+  photo?: string;
+}

@@ -1,4 +1,8 @@
 import type { Role } from "@/config/permissions";
+import type {
+  RegisterCompanyInput,
+  RegisterCompanyResult,
+} from "@/types/trial";
 
 export interface MockUser {
   id: string;
@@ -19,6 +23,8 @@ export interface AuthSession {
 export interface AuthService {
   getSession(): Promise<AuthSession>;
   login(role: Role): Promise<AuthSession>;
+  loginWithCredentials(email: string, password: string): Promise<AuthSession>;
   logout(): Promise<AuthSession>;
   switchRole(role: Role): Promise<AuthSession>;
+  registerCompany(input: RegisterCompanyInput): Promise<RegisterCompanyResult>;
 }

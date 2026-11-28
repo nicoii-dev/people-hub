@@ -11,6 +11,18 @@ export function mockTimestamp(daysFromToday: number, hour = 9) {
   return `${mockDate(daysFromToday)}T${String(hour).padStart(2, "0")}:00:00`;
 }
 
+/** Client-side UUIDs for new mock records; falls back for older environments. */
+export function mockUuid() {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = char === "x" ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
 export const AVATAR_COLORS = [
   "#2563eb",
   "#059669",

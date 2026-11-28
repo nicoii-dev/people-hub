@@ -11,7 +11,19 @@ import type {
   LeaveStatus,
   LeaveType,
 } from "@/types/leave";
-import { apiClient } from "./api/client";
+import {
+  fromLeaveCreate,
+  leaveDecisionFor,
+  leaveTypeIdFor,
+  mapList,
+  mapPage,
+  toLeaveBalance,
+  toLeaveQuery,
+  toLeaveRequest,
+  toLeaveTypeNames,
+  type BackendRecord,
+} from "./api/adapters";
+import { ApiRequestError, apiClient } from "./api/client";
 import { API_ENDPOINTS } from "./api/endpoints";
 import {
   MOCK_COLLECTIONS,
@@ -132,15 +144,70 @@ const mockLeaveService: LeaveService = {
   },
 };
 
+const loadLeaveTypes = () =>
+  apiClient
+    .get<BackendRecord[]>(API_ENDPOINTS.leaveTypes())
+    .then((response) => response.data);
+
 const apiLeaveService: LeaveService = {
-  list: (params) => apiClient.get<Paginated<LeaveRequest>>(API_ENDPOINTS.leaves, params),
-  getById: (id) => apiClient.get<LeaveRequest>(`${API_ENDPOINTS.leaves}/${id}`),
-  create: (input) => apiClient.post<LeaveRequest>(API_ENDPOINTS.leaves, input),
-  updateStatus: (id, status, approverId) =>
-    apiClient.patch<LeaveRequest>(`${API_ENDPOINTS.leaves}/${id}/status`, { status, approverId }),
+  list: async (params = {}) => {
+    const types = params.type ? await loadLeaveTypes() : [];
+    const leaveTypeId = params.type
+      ? leaveTypeIdFor(params.type, types) ?? "00000000-0000-0000-0000-000000000000"
+      : undefined;
+
+    return apiClient
+      .get<Paginated<BackendRecord>>(API_ENDPOINTS.leaveRequests(), {
+        ...toLeaveQuery(params),
+        ...(leaveTypeId ? { leaveTypeId } : {}),
+      })
+      .then((response) => mapPage(response, toLeaveRequest));
+  },
+  getById: (id) =>
+    apiClient
+      .get<BackendRecord>(API_ENDPOINTS.leaveRequest(id))
+      .then((response) => ({ ...response, data: toLeaveRequest(response.data) })),
+  create: async (input) => {
+    const types = await loadLeaveTypes();
+    const leaveTypeId = leaveTypeIdFor(input.type, types);
+    if (!leaveTypeId) {
+      throw new ApiRequestError(
+        `Unknown leave type: ${input.type}`,
+        400,
+        null,
+      );
+    }
+    return apiClient
+      .post<BackendRecord>(
+        API_ENDPOINTS.leaveRequests(),
+        fromLeaveCreate(input, leaveTypeId),
+      )
+      .then((response) => ({ ...response, data: toLeaveRequest(response.data) }));
+  },
+  updateStatus: async (id, status) => {
+    const decision = leaveDecisionFor(status);
+    if (!decision) {
+      throw new ApiRequestError(
+        "Pending leave requests cannot be transitioned to pending.",
+        400,
+        null,
+      );
+    }
+    return apiClient
+      .post<BackendRecord>(API_ENDPOINTS.leaveDecision(id, decision))
+      .then((response) => ({ ...response, data: toLeaveRequest(response.data) }));
+  },
   listBalances: (employeeId) =>
-    apiClient.get<LeaveBalance[]>(API_ENDPOINTS.leaveBalances, employeeId ? { employeeId } : undefined),
-  listTypes: () => apiClient.get<LeaveType[]>(`${API_ENDPOINTS.leaves}/types`),
+    apiClient
+      .get<BackendRecord[]>(API_ENDPOINTS.leaveBalances(), employeeId ? { employeeId } : undefined)
+      .then((response) => mapList(response, toLeaveBalance)),
+  listTypes: () =>
+    apiClient
+      .get<BackendRecord[]>(API_ENDPOINTS.leaveTypes())
+      .then((response) => ({
+        ...response,
+        data: toLeaveTypeNames(response.data),
+      })),
 };
 
 export const leaveService: LeaveService = env.useMockData ? mockLeaveService : apiLeaveService;
